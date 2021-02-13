@@ -14,22 +14,22 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-// cgcs_malloc/cgcs_free: proxy functions designed for use by client
+// `cgcs_malloc/cgcs_free`: proxy functions designed for use by client
 static void *cgcs_malloc(size_t size);
 static void cgcs_free(void *ptr);
 
-// cgcs_malloc_impl: memory allocator functions, allocate and free
+// `cgcs_malloc_impl`: memory allocator functions, allocate and free
 void *cgcs_malloc_impl(size_t size, const char *filename, size_t lineno);
 void cgcs_free_impl(void *ptr, const char *filename, size_t lineno);
 
 /*!
     \brief      Proxy inline function;
-                calls cgcs_malloc_impl with __FILE__ and __LINE__ macros
+                calls `cgcs_malloc_impl` with `__FILE__` and `__LINE__` macros
 
     \param[in]  size    Desired size for memory allocation
 
-    \return     address of allocated memory from cgcs_malloc_impl;
-                will be NULL if cgcs_malloc_impl failed.
+    \return     address of allocated memory from `cgcs_malloc_impl`;
+                will be `NULL` if `cgcs_malloc_impl` failed.
  */
 static inline void *cgcs_malloc(size_t size) {
     return cgcs_malloc_impl(size, __FILE__, __LINE__);
@@ -37,7 +37,7 @@ static inline void *cgcs_malloc(size_t size) {
 
 /*!
     \brief      Proxy inline function;
-                calls cgcs_free_impl with __FILE__ and __LINE__ macros
+                calls `cgcs_free_impl` with `__FILE__` and `__LINE__` macros
 
     \param[in]  ptr     Pointer to memory resources that will be freed
  */
@@ -47,8 +47,8 @@ static inline void cgcs_free(void *ptr) {
 
 /*!
     \def    USE_CGCS_MALLOC
-    \brief  Directive to shorten cgcs_malloc(size) to malloc(size)
-            and cgcs_free(ptr) to free(ptr)
+    \brief  Directive to shorten `cgcs_malloc(size)` to `malloc(size)`
+            and `cgcs_free(ptr)` to `free(ptr)`
 
     \details
     Example usage:
