@@ -580,6 +580,17 @@ void cgcs_free_impl(void *ptr, const char *filename, size_t lineno) {
         // The proceeding block is now free for use.
         header_toggle_use_status(curr);
 
+        /*
+            Now that `curr` is marked as free,
+            if `header_next(curr)` is also free,
+            we can merge (coalesce) them.
+         */
+        header_t *next = header_is_last(curr) ? NULL : header_next(curr);
+
+        if (next && header_is_free(next)) {
+            header_merge_with_next_block(curr);
+        }
+
         // The entirety of `block` will also be searched for
         // adjacent free blocks to coalesce (combine).
         header_coalesce((header_t *)(block));
