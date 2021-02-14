@@ -8,6 +8,7 @@
 
 #include "cgcs_malloc.h"
 
+#include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
@@ -591,4 +592,113 @@ void cgcs_free_impl(void *ptr, const char *filename, size_t lineno) {
         fprintf(stderr, 
         "[ERROR: cgcs_free_impl] Cannot release memory for inactive storage -- did you already call free on this address?\n");        
     }
+}
+
+// Color macros
+#define KNRM        "\x1B[0;0m" //!< reset to standard color/weight
+#define KGRY        "\x1B[0;2m" //!< dark grey
+#define KGRN        "\x1B[0;32m" //!< green
+#define KCYN        "\x1B[0;36m" //!< cyan
+#define KRED_b      "\x1B[1;31m" //!< red bold
+#define KWHT_b      "\x1B[1;37m" //!< white bold
+
+#define HEADER_FPUTS_NO_ALLOCS_MADE \
+"------------------------------------------\n"\
+"No allocations have been made yet.\n\n"\
+"[%s:%lu] %s%s%s\n%s%s %s%s\n"\
+"------------------------------------------\n\n"
+
+#define HEADER_FPUTS_COLUMNS \
+"------------------------------------------\n"\
+"%sBlock Address%s\t%sStatus%s\t\t%sBlock Size%s\n"\
+"-------------\t------\t\t----------\n"\
+
+#define HEADER_FPUTS_STATS \
+"------------------------------------------\n"\
+"Used blocks in list:\t%s%u%s blocks\n"\
+"Free blocks in list:\t%s%u%s blocks\n\n"\
+"Free space:\t\t%s%u%s of %s%u%s bytes\n"\
+"Available for client:\t%s%u%s of %s%u%s bytes\n\n"\
+"Total data in use:\t%s%u%s of %s%u%s bytes\n"\
+"Client data in use:\t%s%u%s of %s%u%s bytes\n\n"\
+"Largest used block:\t%s%u%s of %s%u%s bytes\n"\
+"Largest free block:\t%s%u%s of %s%u%s bytes\n\n"\
+"Size of metadata:\t%s%lu%s bytes\n\n"\
+"[%s:%lu] %s%s%s\n%s%s %s%s\n"\
+"------------------------------------------\n\n"\
+
+/*!
+    \brief  Output the current state of block to a FILE stream dest
+ 
+    \param[in]  dest        a FILE * stream, stdout, stderr, or a file
+    \param[in]  filename    for use with the __FILE__ macro
+    \param[in]  funcname    for use with the __func__ macro
+    \param[in]  lineno      for use with the __LINE__ macro
+ */
+void header_fputs(FILE *dest, const char *filename, const char *funcname, size_t lineno) {
+    struct {
+        uint16_t block_used;
+        uint16_t block_free;
+
+        uint16_t space_used;
+        uint16_t space_free;
+
+        uint16_t bytes_in_use;
+        uint16_t block_count_available;
+
+        uint16_t largest_block_used;
+        uint16_t largest_block_free;
+    } info = { 0, 0, 0, 0, 0, 0, 0, 0 };
+
+    header_t *h = (header_t *)(block);
+
+    if (h->m_size == 0) {
+        fprintf(dest, HEADER_FPUTS_NO_ALLOCS_MADE, 
+        filename, lineno, KCYN, funcname, KNRM, KGRY, __DATE__, __TIME__, KNRM);
+        return;
+    }
+
+    fprintf(dest, HEADER_FPUTS_COLUMNS, KWHT_b, KNRM, KWHT_b, KNRM, KWHT_b, KNRM);
+
+    while (h) {
+        bool header_free = header_is_free(h);
+
+        info.block_used += header_free ? 0 : 1;
+        info.block_free += header_free ? 1 : 0;
+
+        info.space_used += header_free ? 0 : header_alloc_size(h);
+        info.space_free += header_free ? header_alloc_size(h) : 0;
+
+        info.largest_block_used =
+            (info.largest_block_used < header_alloc_size(h)) && !header_free ?
+                header_alloc_size(h) :
+                info.largest_block_used;
+
+        info.largest_block_free = (info.largest_block_free < header_alloc_size(h) && header_free ?
+                                       header_alloc_size(h) :
+                                       info.largest_block_free);
+
+        fprintf(dest, "%s%p%s\t%s\t\t%d\n", 
+        KGRY, (void *)(h + 1), KNRM, header_free ? KGRN"free"KNRM : KRED_b"in use"KNRM, header_alloc_size(h));
+
+        h = header_is_last(h) ? NULL : header_next(h);
+    }
+
+    info.bytes_in_use =
+        info.space_used + (sizeof *h * (info.block_used + info.block_free));
+
+    info.block_count_available =
+        CGCS_MALLOC_BLOCK_SIZE - (sizeof *h * (info.block_free + info.block_used));
+
+    fprintf(dest, HEADER_FPUTS_STATS, 
+        KWHT_b, info.block_used, KNRM,
+        KWHT_b, info.block_free, KNRM,
+        KWHT_b, info.space_free, KNRM, KWHT_b, CGCS_MALLOC_BLOCK_SIZE, KNRM,
+        KWHT_b, info.space_free, KNRM, KWHT_b, info.block_count_available, KNRM,
+        KWHT_b, info.bytes_in_use, KNRM, KWHT_b, CGCS_MALLOC_BLOCK_SIZE, KNRM,
+        KWHT_b, info.space_used, KNRM, KWHT_b, info.block_count_available, KNRM,
+        KWHT_b, info.largest_block_used, KNRM, KWHT_b, info.block_count_available, KNRM,
+        KWHT_b, info.largest_block_free, KNRM, KWHT_b, info.block_count_available, KNRM,
+        KWHT_b, sizeof(header_t), KNRM, 
+        filename, lineno, KCYN, funcname, KNRM, KGRY, __DATE__, __TIME__, KNRM);
 }
