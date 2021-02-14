@@ -74,7 +74,7 @@ static bool header_is_last(header_t *self);
 static int16_t header_calculate_split_remainder_size(header_t *self, int16_t size_to_keep);
 
 static void header_toggle_use_status(header_t *self);
-static bool header_is_corrupt(header_t *self);
+//static bool header_is_corrupt(header_t *self);
 
 static void header_split_block(header_t *self, size_t size);
 static void header_merge_with_next_block(header_t *self);
@@ -279,9 +279,12 @@ static inline void header_toggle_use_status(header_t *self) {
     \return     `true`, if `self->m_size == 0 || self->m_size > CGCS_MALLOC_BLOCK_SIZE - sizeof(header_t)`
                 false otherwise.
  */
+/*
+// UNUSED
 static inline bool header_is_corrupt(header_t *self) {
     return self->m_size == 0 || self->m_size > CGCS_MALLOC_BLOCK_SIZE - sizeof *self;
 }
+*/
 
 /*!
     \brief      Determines if `ptr`'s address is less than the first address at block,
