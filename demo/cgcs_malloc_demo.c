@@ -1,5 +1,5 @@
 /*!
-    \file       cgcs_malloc_test.c
+    \file       cgcs_malloc_demo.c
     \brief      Client source file for cgcs_malloc: malloc implementation
 
     \author     Gemuele Aludino
