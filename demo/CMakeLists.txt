@@ -8,5 +8,5 @@ set(CMAKE_C_STANDARD ${C_STANDARD})
 set(CMAKE_C_FLAGS ${CMAKE_C_FLAGS} ${CFLAGS})
 
 add_executable("cgcs_malloc_demo" "cgcs_malloc_demo.c")
-add_compile_options("cgcs_malloc_demo" PUBLIC "-fblocks")
+target_compile_options("cgcs_malloc_demo" PUBLIC "-fblocks")
 target_link_libraries("cgcs_malloc_demo" LINK_PUBLIC "cgcs_malloc")
